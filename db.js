@@ -1,0 +1,1 @@
+mongodb+srv://nomatyx:3rXjr9LZfJT6nPgr@bcit.bcxaqyh.mongodb.net/?appName=BCIT
