@@ -75,17 +75,15 @@ app.get("/membersarea", (req, res) => {
     res.redirect("/");
     return;
   }
-  var rand = Math.floor(Math.random() * 3);
 
-  if (cat == 1) {
-    res.send("Fluffy: <img src='/fluffy.gif' style='width:250px;'>");
-  } else if (cat == 2) {
-    res.send("Socks: <img src='/socks.gif' style='width:250px;'>");
+  let rand = Math.floor(Math.random() * 3);
+  if (rand == 0) {
+    res.send("<img src='/847.png' style='width:250px;'>");
+  } else if (rand == 1) {
+    res.send("<img src='/ungovernable.jpeg' style='width:250px;'>");
   } else {
-    res.send("Invalid cat id: " + cat);
+    res.send("<img src='flowchart.png' style='width:250px;'>");
   }
-  res.send(`
-    `);
 });
 
 app.get("/login", (req, res) => {
@@ -106,7 +104,7 @@ app.get("/login", (req, res) => {
   res.send(html);
 });
 
-app.get("/error", (req, res) => {
+app.get("/signuperror", (req, res) => {
   let str = "";
   if (req.query.name) str += "name";
   if (req.query.email) {
@@ -136,7 +134,7 @@ app.post("/loggingin", async (req, res) => {
   const emailValidationResult = schema.validate(email);
   const passwordValidationResult = schema.validate(password);
 
-  let page = "/error?";
+  let page = "/loginerror?";
   let numErrors = 0;
   if (
     nameValidationResult.error != null ||
@@ -144,7 +142,6 @@ app.post("/loggingin", async (req, res) => {
     passwordValidationResult.error != null
   ) {
     if (nameValidationResult.error) {
-      console.log("hello");
       page += "name=true";
       numErrors++;
     }
@@ -173,7 +170,7 @@ app.post("/loggingin", async (req, res) => {
   //user and password combination not found
   if (result.length != 1) {
     console.log("user not found");
-    res.redirect("/login");
+    res.redirect(page);
     return;
   }
 
@@ -187,9 +184,36 @@ app.post("/loggingin", async (req, res) => {
     return;
   } else {
     console.log("incorrect password");
-    res.redirect("/login");
+    res.redirect("/loginerror");
     return;
   }
+});
+
+app.get("/loginerror", (req, res) => {
+  app.get("/signuperror", (req, res) => {
+    let str = "";
+    if (req.query.name) str += "name";
+    if (req.query.email) {
+      if (str) {
+        str += ", ";
+      }
+      str += "email";
+    }
+    if (req.query.password) {
+      if (str) {
+        str += ", ";
+      }
+      str += "password";
+    }
+    let html = "";
+    if (str) {
+      html += `${str} can't be empty`;
+    } else {
+      html += `user/password combo not found.`;
+    }
+    html += `<button onclick="history.back()">Go Back</button>`;
+    res.send(html);
+  });
 });
 
 app.get("/signup", (req, res) => {
@@ -216,7 +240,7 @@ app.post("/submitUser", async (req, res) => {
   const emailValidationResult = schema.validate(email);
   const passwordValidationResult = schema.validate(password);
 
-  let page = "/error?";
+  let page = "/signuperror?";
   let numErrors = 0;
   if (
     nameValidationResult.error != null ||
