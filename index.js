@@ -45,6 +45,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(__dirname + "/public"));
 
 app.get("/", (req, res) => {
   if (!req.session.authenticated) {
@@ -74,8 +75,16 @@ app.get("/membersarea", (req, res) => {
     res.redirect("/");
     return;
   }
+  var rand = Math.floor(Math.random() * 3);
+
+  if (cat == 1) {
+    res.send("Fluffy: <img src='/fluffy.gif' style='width:250px;'>");
+  } else if (cat == 2) {
+    res.send("Socks: <img src='/socks.gif' style='width:250px;'>");
+  } else {
+    res.send("Invalid cat id: " + cat);
+  }
   res.send(`
-    
     `);
 });
 
@@ -243,8 +252,6 @@ app.post("/submitUser", async (req, res) => {
   var html = "successfully created user";
   res.send(html);
 });
-
-app.use(express.static(__dirname + "/public"));
 
 app.get("/logout", (req, res) => {
   req.session.destroy();
