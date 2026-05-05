@@ -180,7 +180,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.username = username;
     req.session.cookie.maxAge = expireTime;
 
-    res.redirect("/");
+    res.redirect("/membersarea");
     return;
   } else {
     console.log("incorrect password");
