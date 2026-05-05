@@ -134,7 +134,7 @@ app.post("/loggingin", async (req, res) => {
   const emailValidationResult = schema.validate(email);
   const passwordValidationResult = schema.validate(password);
 
-  let page = "/loginerror?";
+  let page = "/loginerror";
   let numErrors = 0;
   if (
     nameValidationResult.error != null ||
@@ -142,20 +142,20 @@ app.post("/loggingin", async (req, res) => {
     passwordValidationResult.error != null
   ) {
     if (nameValidationResult.error) {
-      page += "name=true";
+      page += "?name=true";
       numErrors++;
     }
     if (emailValidationResult.error) {
       if (numErrors) {
         page += "&";
-      }
+      } else page += "?";
       page += "email=true";
       numErrors++;
     }
     if (passwordValidationResult.error) {
       if (numErrors) {
         page += "&";
-      }
+      } else page += "?";
       page += "password=true";
     }
     res.redirect(page);
@@ -190,30 +190,28 @@ app.post("/loggingin", async (req, res) => {
 });
 
 app.get("/loginerror", (req, res) => {
-  app.get("/signuperror", (req, res) => {
-    let str = "";
-    if (req.query.name) str += "name";
-    if (req.query.email) {
-      if (str) {
-        str += ", ";
-      }
-      str += "email";
-    }
-    if (req.query.password) {
-      if (str) {
-        str += ", ";
-      }
-      str += "password";
-    }
-    let html = "";
+  let str = "";
+  if (req.query.name) str += "name";
+  if (req.query.email) {
     if (str) {
-      html += `${str} can't be empty`;
-    } else {
-      html += `user/password combo not found.`;
+      str += ", ";
     }
-    html += `<button onclick="history.back()">Go Back</button>`;
-    res.send(html);
-  });
+    str += "email";
+  }
+  if (req.query.password) {
+    if (str) {
+      str += ", ";
+    }
+    str += "password";
+  }
+  let html = "";
+  if (str) {
+    html += `${str} can't be empty`;
+  } else {
+    html += `user/password combo not found.`;
+  }
+  html += `<button onclick="history.back()">Go Back</button>`;
+  res.send(html);
 });
 
 app.get("/signup", (req, res) => {
