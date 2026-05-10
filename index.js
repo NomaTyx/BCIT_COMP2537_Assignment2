@@ -8,6 +8,7 @@ const { MongoStore } = require("connect-mongo");
 const saltRounds = 12;
 const expireTime = 60 * 60 * 1000;
 const Joi = require("joi");
+const { error } = require("node:console")
 
 const port = process.env.PORT || 3000;
 
@@ -47,27 +48,14 @@ app.use(
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(__dirname + "/public"));
 
+app.set("view engine", "ejs");
+
 app.get("/", (req, res) => {
   if (!req.session.authenticated) {
-    res.send(`
-    <form method="get" action="/login">
-      <button type=submit>Log in</button>
-    </form>
-    <form method="get" action="/signup">
-      <button type=submit>Sign up</button>
-    </form>
-    </body>`);
+    res.render("loginsignup");
     return;
   }
-  res.send(`
-    Hello ${req.session.username}
-    <form method="get" action="/membersarea">
-      <button type=submit>Go to members area</button>
-    </form>
-    <form method="get" action="/logout">
-      <button type=submit>Log out</button>
-    </form>
-    `);
+  res.render("homepage", {username: req.session.username});
 });
 
 app.get("/membersarea", (req, res) => {
@@ -75,15 +63,18 @@ app.get("/membersarea", (req, res) => {
     res.redirect("/");
     return;
   }
+  let str;
 
   let rand = Math.floor(Math.random() * 3);
   if (rand == 0) {
-    res.send("<img src='/847.png' style='width:250px;'>");
+    str = "<img src='/847.png' style='width:250px;'>";
   } else if (rand == 1) {
-    res.send("<img src='/ungovernable.jpeg' style='width:250px;'>");
+    str = "<img src='/ungovernable.jpeg' style='width:250px;'>";
   } else {
-    res.send("<img src='flowchart.png' style='width:250px;'>");
+    str = "<img src='flowchart.png' style='width:250px;'>";
   }
+
+  res.render("membersarea", {image: str});
 });
 
 app.get("/login", (req, res) => {
@@ -92,16 +83,8 @@ app.get("/login", (req, res) => {
     console.log(req.session.username);
     return;
   }
-  var html = `
-    log in
-    <form action='/loggingin' method='post'>
-    <input name='username' type='text' placeholder='username'>
-    <input name='email' type='text' placeholder='email'>
-    <input name='password' type='password' placeholder='password'>
-    <button>Submit</button>
-    </form>
-    `;
-  res.send(html);
+
+  res.render("login");
 });
 
 app.get("/signuperror", (req, res) => {
@@ -117,10 +100,10 @@ app.get("/signuperror", (req, res) => {
     if (str) {
       str += ", ";
     }
-    str += "password";
+    str += "password ";
   }
-  res.send(`${str} can't be empty
-    <button onclick="history.back()">Go Back</button>`);
+  str += "can't be empty";
+  res.render("error", {html: str});
 });
 
 app.post("/loggingin", async (req, res) => {
@@ -180,7 +163,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.username = username;
     req.session.cookie.maxAge = expireTime;
 
-    res.redirect("/membersarea");
+    res.redirect("/");
     return;
   } else {
     console.log("incorrect password");
@@ -210,8 +193,7 @@ app.get("/loginerror", (req, res) => {
   } else {
     html += `user/password combo not found.`;
   }
-  html += `<button onclick="history.back()">Go Back</button>`;
-  res.send(html);
+  res.render("error", {html: html});
 });
 
 app.get("/signup", (req, res) => {
@@ -272,24 +254,22 @@ app.post("/submitUser", async (req, res) => {
   await userCollection.insertOne({ username: username, email: email, password: hashedPassword });
   console.log("Inserted user");
   var html = "successfully created user";
-  res.send(html);
+
+  req.session.authenticated = true;
+  req.session.username = username;
+  req.session.cookie.maxAge = expireTime;
+  res.redirect("/");
 });
 
 app.get("/logout", (req, res) => {
   req.session.destroy();
-  var html = `
-    You are logged out.
-    <form method="get" action="/">
-      <button type=submit>Home page</button>
-    </form>
-    `;
-  res.send(html);
+  res.render("logout");
 });
 
 //*splat is because of express v5
 app.get("*splat", (req, res) => {
   res.status(404);
-  res.send("Page not found - 404");
+  res.render("404");
 });
 
 app.listen(port, () => {
