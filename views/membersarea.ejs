@@ -1,4 +1,8 @@
-<%- image %>
-<form method="get" action="/">
-  <button type="submit">Go Home</button>
-</form>
+<%- include('partials/header');%>
+<div class="container w-25 justify-content-center">
+  <%- image %>
+  <form method="get" action="/" class="text-center">
+    <button class="btn btn-primary align-center" type="submit">Go Home</button>
+  </form>
+  <%- include('partials/footer');%>
+</div>

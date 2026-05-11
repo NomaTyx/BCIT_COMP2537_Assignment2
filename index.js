@@ -8,7 +8,7 @@ const { MongoStore } = require("connect-mongo");
 const saltRounds = 12;
 const expireTime = 60 * 60 * 1000;
 const Joi = require("joi");
-const { error } = require("node:console")
+const { error } = require("node:console");
 
 const port = process.env.PORT || 3000;
 
@@ -24,9 +24,15 @@ const node_session_secret = process.env.NODE_SESSION_SECRET;
 
 const app = express();
 
+app.use("/css", express.static(__dirname + "/node_modules/bootstrap/dist/css"));
+app.use("/js", express.static(__dirname + "/node_modules/bootstrap/dist/js"));
+
 var { database } = include("db");
 
 const userCollection = database.db(mongodb_db).collection("users");
+
+//configure middleware
+app.use('/loggedin', sessionValidation);
 
 var mongoStore = MongoStore.create({
   mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@${mongodb_host}/sessions`,
@@ -55,7 +61,7 @@ app.get("/", (req, res) => {
     res.render("loginsignup");
     return;
   }
-  res.render("homepage", {username: req.session.username});
+  res.render("homepage", { username: req.session.username });
 });
 
 app.get("/membersarea", (req, res) => {
@@ -67,14 +73,14 @@ app.get("/membersarea", (req, res) => {
 
   let rand = Math.floor(Math.random() * 3);
   if (rand == 0) {
-    str = "<img src='/847.png' style='width:250px;'>";
+    str = `<img src='/847.png' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
   } else if (rand == 1) {
-    str = "<img src='/ungovernable.jpeg' style='width:250px;'>";
+    str = `<img src='/ungovernable.jpeg' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
   } else {
-    str = "<img src='flowchart.png' style='width:250px;'>";
+    str = `<img src='flowchart.png' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
   }
 
-  res.render("membersarea", {image: str});
+  res.render("membersarea", { image: str });
 });
 
 app.get("/login", (req, res) => {
@@ -103,7 +109,7 @@ app.get("/signuperror", (req, res) => {
     str += "password ";
   }
   str += "can't be empty";
-  res.render("error", {html: str});
+  res.render("error", { html: str });
 });
 
 app.post("/loggingin", async (req, res) => {
@@ -145,10 +151,7 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-  const result = await userCollection
-    .find({ username: username })
-    .project({ username: 1, email: 1, password: 1, _id: 1 })
-    .toArray();
+	const result = await userCollection.find({username: username}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
 
   //user and password combination not found
   if (result.length != 1) {
@@ -162,6 +165,7 @@ app.post("/loggingin", async (req, res) => {
     req.session.authenticated = true;
     req.session.username = username;
     req.session.cookie.maxAge = expireTime;
+    req.session.user_type = result[0].user_type;
 
     res.redirect("/");
     return;
@@ -193,19 +197,11 @@ app.get("/loginerror", (req, res) => {
   } else {
     html += `user/password combo not found.`;
   }
-  res.render("error", {html: html});
+  res.render("error", { html: html });
 });
 
 app.get("/signup", (req, res) => {
-  var html = `
-    <form action='/submitUser' method='post'>
-    <input name='username' type='text' placeholder='username'>
-    <input name='email' type='text' placeholder='email'>
-    <input name='password' type='password' placeholder='password'>
-    <button>Submit</button>
-    </form>
-    `;
-  res.send(html);
+  res.render("signup");
 });
 
 //when this page is reached it will send certain data to the server
@@ -219,6 +215,16 @@ app.post("/submitUser", async (req, res) => {
   const nameValidationResult = schema.validate(username);
   const emailValidationResult = schema.validate(email);
   const passwordValidationResult = schema.validate(password);
+
+  const result = await userCollection
+    .find({ username: username })
+    .project({ username: 1, email: 1, password: 1, _id: 1 })
+    .toArray();
+
+  if (result.length > 0) {
+    res.redirect("login");
+    return;
+  }
 
   let page = "/signuperror?";
   let numErrors = 0;
@@ -251,9 +257,8 @@ app.post("/submitUser", async (req, res) => {
 
   var hashedPassword = await bcrypt.hash(password, saltRounds);
 
-  await userCollection.insertOne({ username: username, email: email, password: hashedPassword });
+	await userCollection.insertOne({username: username, password: hashedPassword, user_type: "user"});
   console.log("Inserted user");
-  var html = "successfully created user";
 
   req.session.authenticated = true;
   req.session.username = username;
@@ -266,6 +271,24 @@ app.get("/logout", (req, res) => {
   res.render("logout");
 });
 
+app.get("/admin", sessionValidation, adminAuthorization, async (req, res) => {
+  const result = await userCollection.find().project({ username: 1, _id: 1 }).toArray();
+  
+  res.render("admin", { users: result });
+});
+
+app.post("/promote", sessionValidation, async (req, res) => {
+  const { username } = req.body;
+  await userCollection.updateOne({ username }, { $set: { role: "admin" } });
+  res.redirect("/admin");
+});
+
+app.post("/demote", sessionValidation, async (req, res) => {
+  const { username } = req.body;
+  await userCollection.updateOne({ username }, { $set: { role: "user" } });
+  res.redirect("/admin");
+});
+
 //*splat is because of express v5
 app.get("*splat", (req, res) => {
   res.status(404);
@@ -275,3 +298,36 @@ app.get("*splat", (req, res) => {
 app.listen(port, () => {
   console.log("Node application listening on port " + port);
 });
+
+function isValidSession(req) {
+  if (req.session.authenticated) {
+    return true;
+  }
+  return false;
+}
+
+function sessionValidation(req, res, next) {
+  if (isValidSession(req)) {
+    next();
+  } else {
+    res.redirect("/login");
+  }
+}
+
+function isAdmin(req) {
+    if (req.session.user_type == 'admin') {
+        return true;
+    }
+    return false;
+}
+
+function adminAuthorization(req, res, next) {
+    if (!isAdmin(req)) {
+        res.status(403);
+        res.render("403", {error: "Not Authorized"});
+        return;
+    } 
+    else {
+        next();
+    }
+}
