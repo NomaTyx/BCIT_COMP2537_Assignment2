@@ -180,12 +180,13 @@ app.get("/loginerror", (req, res) => {
     }
     str += "password";
   }
-  let html = "";
+  let html = `<h1 class="text-center">`;
   if (str) {
     html += `${str} can't be empty`;
   } else {
     html += `user/password combo not found.`;
   }
+  html += `</h1>`;
   res.render("error", { html: html });
 });
 
