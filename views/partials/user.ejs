@@ -1,13 +1,15 @@
-<li class="row justify-content-center text-center my-5"> 
-  <span class="col-sm-1 mx-3" style="background-color: lightgrey;">
-    <%= user.username %> (<%= user.role || 'user' %>)
+<li class="row justify-content-center text-center my-5">
+  <span class="col-sm-1 mx-3" style="background-color: lightgrey">
+    <%= user.username %> (<%= user.user_type || 'user' %>) <% console.log(user.user_type) %>
   </span>
 
   <form action="/promote" method="POST" class="col-sm-1 mx-3">
+    <input type="hidden" name="username" value="<%= user.username %>" />
     <button class="btn btn-success">promote</button>
   </form>
 
   <form action="/demote" method="POST" class="col-sm-1 mx-3">
+    <input type="hidden" name="username" value="<%= user.username %>" />
     <button class="btn btn-danger">demote</button>
   </form>
 </li>

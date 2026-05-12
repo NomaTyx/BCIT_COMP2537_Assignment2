@@ -5,7 +5,7 @@ Self-graded Assignment 2 Checklist
 [x]  The /admin page redirects to the /login page if not logged in.
 [x]  The /admin page shows an error message if logged in, but not an admin
 [x]  The /admin page shows a list of all users
-[]  The /admin page allows for promoting and demoting users to/from admin type
+[x]  The /admin page allows for promoting and demoting users to/from admin type
 [x]  All pages use a CSS Framework like Bootstrap (you must incorporate a header, footer, responsive grid, forms, buttons)
 
 [x]  The site uses EJS as a templating engine

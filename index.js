@@ -69,18 +69,7 @@ app.get("/membersarea", (req, res) => {
     res.redirect("/");
     return;
   }
-  let str;
-
-  let rand = Math.floor(Math.random() * 3);
-  if (rand == 0) {
-    str = `<img src='/847.png' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
-  } else if (rand == 1) {
-    str = `<img src='/ungovernable.jpeg' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
-  } else {
-    str = `<img src='flowchart.png' class="img-fluid d-block mx-auto" style="max-width: 300px;">`;
-  }
-
-  res.render("membersarea", { image: str });
+  res.render("membersarea");
 });
 
 app.get("/login", (req, res) => {
@@ -272,20 +261,21 @@ app.get("/logout", (req, res) => {
 });
 
 app.get("/admin", sessionValidation, adminAuthorization, async (req, res) => {
-  const result = await userCollection.find().project({ username: 1, _id: 1 }).toArray();
+  const result = await userCollection.find().project({ username: 1, _id: 1, user_type: 1 }).toArray();
   
   res.render("admin", { users: result });
 });
 
 app.post("/promote", sessionValidation, async (req, res) => {
   const { username } = req.body;
-  await userCollection.updateOne({ username }, { $set: { role: "admin" } });
+  await userCollection.updateOne({ username }, { $set: { user_type: "admin" } });
+  console.log("updated");
   res.redirect("/admin");
 });
 
 app.post("/demote", sessionValidation, async (req, res) => {
   const { username } = req.body;
-  await userCollection.updateOne({ username }, { $set: { role: "user" } });
+  await userCollection.updateOne({ username }, { $set: { user_type: "user" } });
   res.redirect("/admin");
 });
 
