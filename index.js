@@ -102,32 +102,22 @@ app.get("/signuperror", (req, res) => {
 });
 
 app.post("/loggingin", async (req, res) => {
-  var username = req.body.username;
   var email = req.body.email;
   var password = req.body.password;
 
   const schema = Joi.string().max(20).required();
 
-  const nameValidationResult = schema.validate(username);
   const emailValidationResult = schema.validate(email);
   const passwordValidationResult = schema.validate(password);
 
   let page = "/loginerror";
   let numErrors = 0;
   if (
-    nameValidationResult.error != null ||
     emailValidationResult.error != null ||
     passwordValidationResult.error != null
   ) {
-    if (nameValidationResult.error) {
-      page += "?name=true";
-      numErrors++;
-    }
     if (emailValidationResult.error) {
-      if (numErrors) {
-        page += "&";
-      } else page += "?";
-      page += "email=true";
+      page += "?email=true";
       numErrors++;
     }
     if (passwordValidationResult.error) {
@@ -140,7 +130,7 @@ app.post("/loggingin", async (req, res) => {
     return;
   }
 
-	const result = await userCollection.find({username: username}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
+	const result = await userCollection.find({email: email}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
 
   //user and password combination not found
   if (result.length != 1) {
@@ -152,7 +142,7 @@ app.post("/loggingin", async (req, res) => {
   if (await bcrypt.compare(password, result[0].password)) {
     console.log("correct password");
     req.session.authenticated = true;
-    req.session.username = username;
+    req.session.username = result[0].username;
     req.session.cookie.maxAge = expireTime;
     req.session.user_type = result[0].user_type;
 
